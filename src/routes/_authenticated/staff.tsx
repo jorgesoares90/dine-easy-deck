@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/staff")({
 type Tenant = { id: string; name: string; slug: string };
 type RestaurantTable = { id: string; number: number; status: string; capacity: number };
 type Order = { id: string; status: string; total: number; created_at: string; table_id: string | null };
+type OrderItem = { id: string; status: string; created_at: string; order_id: string; quantity: number; name_snapshot: string | null };
 
 type Tab = "dashboard" | "tables" | "kds";
 
