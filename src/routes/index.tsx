@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   QrCode, Smartphone, ChefHat, UserCog, LayoutDashboard, ShoppingCart,
   Monitor, Users, Wallet, Settings, MenuSquare, Bell, Check, X,
   Plus, Minus, Clock, ArrowLeft, Receipt, TrendingUp, Table as TableIcon,
-  DollarSign, ChevronRight, Search, Utensils, Coffee, Pizza,
+  DollarSign, ChevronRight, Search, Utensils, Coffee, Pizza, LogIn,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -62,6 +62,13 @@ function Switcher({ current, onChange }: { current: Profile; onChange: (p: Profi
           </button>
         );
       })}
+      <Link
+        to="/auth"
+        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-white bg-slate-900 hover:bg-slate-800"
+      >
+        <LogIn className="w-4 h-4" />
+        <span className="hidden sm:inline">Staff Login</span>
+      </Link>
     </div>
   );
 }
