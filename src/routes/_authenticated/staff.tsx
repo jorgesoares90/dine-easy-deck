@@ -121,9 +121,8 @@ function StaffPage() {
     setLoading(true);
     const slug = `restaurante-${user.id.slice(0, 6)}`;
     const { data: t, error } = await supabase
-      .from("tenants").insert({ name: "Meu Restaurante", slug }).select().single();
+      .rpc("create_tenant_with_owner", { _name: "Meu Restaurante", _slug: slug });
     if (error) { alert(error.message); setLoading(false); return; }
-    await supabase.from("user_roles").insert({ user_id: user.id, tenant_id: t.id, role: "owner" });
     setTenant(t as any);
     setLoading(false);
   }
