@@ -307,31 +307,30 @@ function TablesTab({ tenantId }: { tenantId: string }) {
 
 /* ---------------- KDS ---------------- */
 function KDSTab({ tenantId }: { tenantId: string }) {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [items, setItems] = useState<OrderItem[]>([]);
 
   async function load() {
     const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("tenant_id", tenantId)
+      .from("order_items")
+      .select("id, status, created_at, order_id, quantity, name_snapshot, orders!inner(tenant_id)")
+      .eq("orders.tenant_id", tenantId)
       .in("status", ["recebido", "em_preparo"])
       .order("created_at");
-    setOrders((data as any) ?? []);
+    setItems((data as any) ?? []);
   }
 
   useEffect(() => {
     load();
     const channel = supabase
       .channel(`kds-${tenantId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `tenant_id=eq.${tenantId}` },
-        () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [tenantId]);
 
-  async function advance(o: Order) {
-    const next = o.status === "recebido" ? "em_preparo" : "finalizado";
-    await supabase.from("orders").update({ status: next }).eq("id", o.id);
+  async function advance(it: OrderItem) {
+    const next = it.status === "recebido" ? "em_preparo" : "finalizado";
+    await supabase.from("order_items").update({ status: next }).eq("id", it.id);
   }
 
   const cols = [
@@ -346,23 +345,24 @@ function KDSTab({ tenantId }: { tenantId: string }) {
         {cols.map(col => (
           <div key={col.key} className={`bg-white rounded-xl border-t-4 ${col.color}`}>
             <div className="p-3 border-b font-semibold">
-              {col.label} ({orders.filter(o => o.status === col.key).length})
+              {col.label} ({items.filter(o => o.status === col.key).length})
             </div>
             <div className="p-3 space-y-2 min-h-40">
-              {orders.filter(o => o.status === col.key).map(o => (
-                <div key={o.id} className="border rounded-lg p-3">
+              {items.filter(o => o.status === col.key).map(it => (
+                <div key={it.id} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-slate-400">#{o.id.slice(0, 8)}</span>
-                    <span className="text-xs text-slate-500">{new Date(o.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span className="font-semibold text-sm">{it.quantity}× {it.name_snapshot ?? "Item"}</span>
+                    <span className="text-xs text-slate-500">{new Date(it.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
-                  <button onClick={() => advance(o)}
+                  <div className="font-mono text-xs text-slate-400 mt-1">#{it.order_id.slice(0, 8)}</div>
+                  <button onClick={() => advance(it)}
                     className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-xs py-2 rounded-lg hover:bg-slate-800">
                     <CheckCircle2 className="w-3 h-3" />
                     {col.key === "recebido" ? "Iniciar preparo" : "Finalizar"}
                   </button>
                 </div>
               ))}
-              {orders.filter(o => o.status === col.key).length === 0 && (
+              {items.filter(o => o.status === col.key).length === 0 && (
                 <div className="text-xs text-slate-300 text-center py-6">Vazio</div>
               )}
             </div>
