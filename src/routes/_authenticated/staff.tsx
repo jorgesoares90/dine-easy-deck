@@ -563,3 +563,341 @@ function Placeholder({ title, desc }: { title: string; desc: string }) {
     </div>
   );
 }
+
+/* ---------------- Products & Categories ---------------- */
+type Category = { id: string; name: string; position: number; is_active: boolean };
+type Product = { id: string; category_id: string | null; name: string; description: string | null; price: number; is_active: boolean; position: number };
+
+function ProductsSection({ tenantId }: { tenantId: string }) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [newCatName, setNewCatName] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+
+  async function loadAll() {
+    const [{ data: cats }, { data: prods }] = await Promise.all([
+      supabase.from("categories").select("*").eq("tenant_id", tenantId).order("position"),
+      supabase.from("products").select("*").eq("tenant_id", tenantId).order("position"),
+    ]);
+    setCategories((cats as any) ?? []);
+    setProducts((prods as any) ?? []);
+    if (!selectedCat && cats && cats.length) setSelectedCat((cats[0] as any).id);
+  }
+  useEffect(() => { loadAll(); /* eslint-disable-next-line */ }, [tenantId]);
+
+  async function addCategory() {
+    const name = newCatName.trim();
+    if (!name) return;
+    const { error } = await supabase.from("categories").insert({
+      tenant_id: tenantId, name, position: categories.length, is_active: true,
+    });
+    if (error) return alert(error.message);
+    setNewCatName("");
+    await loadAll();
+  }
+
+  async function deleteCategory(id: string) {
+    if (!confirm("Excluir categoria e todos os produtos dela?")) return;
+    await supabase.from("products").delete().eq("category_id", id);
+    await supabase.from("categories").delete().eq("id", id);
+    if (selectedCat === id) setSelectedCat(null);
+    await loadAll();
+  }
+
+  async function saveProduct() {
+    if (!editingProduct || !editingProduct.name) return;
+    const payload: any = {
+      tenant_id: tenantId,
+      category_id: editingProduct.category_id ?? selectedCat,
+      name: editingProduct.name,
+      description: editingProduct.description ?? null,
+      price: Number(editingProduct.price ?? 0),
+      is_active: editingProduct.is_active ?? true,
+      position: editingProduct.position ?? products.length,
+    };
+    const { error } = editingProduct.id
+      ? await supabase.from("products").update(payload).eq("id", editingProduct.id)
+      : await supabase.from("products").insert(payload);
+    if (error) return alert(error.message);
+    setEditingProduct(null);
+    await loadAll();
+  }
+
+  async function deleteProduct(id: string) {
+    if (!confirm("Excluir produto?")) return;
+    await supabase.from("products").delete().eq("id", id);
+    await loadAll();
+  }
+
+  const visible = selectedCat ? products.filter(p => p.category_id === selectedCat) : products;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+      <aside className="bg-white border border-line rounded-2xl p-4">
+        <h3 className="text-sm font-semibold mb-3">Categorias</h3>
+        <div className="flex gap-2 mb-3">
+          <input value={newCatName} onChange={e => setNewCatName(e.target.value)}
+            placeholder="Nova categoria"
+            className="flex-1 px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/40" />
+          <button onClick={addCategory}
+            className="px-3 rounded-lg bg-brand text-white hover:bg-brand-dark"><Plus className="w-4 h-4" /></button>
+        </div>
+        <ul className="space-y-1">
+          {categories.map(c => (
+            <li key={c.id} className={`group flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer ${
+              selectedCat === c.id ? "bg-brand-soft text-brand-dark" : "hover:bg-cream-dark text-ink-soft"
+            }`} onClick={() => setSelectedCat(c.id)}>
+              <span className="truncate">{c.name}</span>
+              <button onClick={(e) => { e.stopPropagation(); deleteCategory(c.id); }}
+                className="opacity-0 group-hover:opacity-100 text-ink-muted hover:text-rose-600">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+          {categories.length === 0 && <li className="text-xs text-ink-muted px-2 py-2">Sem categorias.</li>}
+        </ul>
+      </aside>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm text-ink-muted">
+            {selectedCat ? categories.find(c => c.id === selectedCat)?.name : "Todos os produtos"} · {visible.length} {visible.length === 1 ? "item" : "itens"}
+          </h3>
+          <button
+            disabled={!selectedCat && categories.length === 0}
+            onClick={() => setEditingProduct({ category_id: selectedCat ?? undefined, name: "", price: 0, is_active: true })}
+            className="flex items-center gap-2 bg-brand text-white px-3 py-2 rounded-xl text-sm font-semibold hover:bg-brand-dark disabled:opacity-50">
+            <Plus className="w-4 h-4" /> Novo produto
+          </button>
+        </div>
+
+        {categories.length === 0 ? (
+          <div className="bg-white border border-line rounded-2xl p-10 text-center text-ink-muted text-sm">
+            Crie uma categoria para começar a cadastrar produtos.
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="bg-white border border-line rounded-2xl p-10 text-center text-ink-muted text-sm">
+            Nenhum produto nesta categoria ainda.
+          </div>
+        ) : (
+          <div className="bg-white border border-line rounded-2xl divide-y divide-line overflow-hidden">
+            {visible.map(p => (
+              <div key={p.id} className="p-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-ink truncate">{p.name}</div>
+                  {p.description && <div className="text-xs text-ink-muted truncate">{p.description}</div>}
+                </div>
+                <div className="font-semibold whitespace-nowrap">R$ {Number(p.price).toFixed(2)}</div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full ${p.is_active ? "bg-sage-soft text-sage-dark" : "bg-cream-dark text-ink-muted"}`}>
+                  {p.is_active ? "Ativo" : "Inativo"}
+                </span>
+                <button onClick={() => setEditingProduct(p)} className="p-1.5 text-ink-muted hover:text-ink"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => deleteProduct(p.id)} className="p-1.5 text-ink-muted hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {editingProduct && (
+        <ProductModal
+          value={editingProduct}
+          categories={categories}
+          onChange={setEditingProduct}
+          onClose={() => setEditingProduct(null)}
+          onSave={saveProduct}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductModal({ value, categories, onChange, onClose, onSave }: {
+  value: Partial<Product>;
+  categories: Category[];
+  onChange: (v: Partial<Product>) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b border-line">
+          <h3 className="font-bold">{value.id ? "Editar produto" : "Novo produto"}</h3>
+          <button onClick={onClose} className="p-1 text-ink-muted hover:text-ink"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-4 space-y-3">
+          <Field label="Nome">
+            <input value={value.name ?? ""} onChange={e => onChange({ ...value, name: e.target.value })}
+              className="w-full px-3 py-2 border border-line rounded-lg" />
+          </Field>
+          <Field label="Descrição">
+            <textarea value={value.description ?? ""} onChange={e => onChange({ ...value, description: e.target.value })}
+              rows={2} className="w-full px-3 py-2 border border-line rounded-lg" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Preço (R$)">
+              <input type="number" step="0.01" min="0" value={value.price ?? 0}
+                onChange={e => onChange({ ...value, price: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-line rounded-lg" />
+            </Field>
+            <Field label="Categoria">
+              <select value={value.category_id ?? ""} onChange={e => onChange({ ...value, category_id: e.target.value })}
+                className="w-full px-3 py-2 border border-line rounded-lg bg-white">
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </Field>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={value.is_active ?? true}
+              onChange={e => onChange({ ...value, is_active: e.target.checked })} />
+            Ativo no cardápio
+          </label>
+        </div>
+        <div className="p-4 border-t border-line flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-lg hover:bg-cream-dark">Cancelar</button>
+          <button onClick={onSave} className="px-4 py-2 text-sm font-semibold rounded-lg bg-brand text-white hover:bg-brand-dark">Salvar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-xs text-ink-muted font-medium">{label}</span>
+      <div className="mt-1">{children}</div>
+    </label>
+  );
+}
+
+/* ---------------- QR Codes ---------------- */
+function QRSection({ tenantId }: { tenantId: string }) {
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [qrs, setQrs] = useState<Record<string, string>>({});
+  const [count, setCount] = useState(5);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data } = await supabase.from("restaurant_tables")
+      .select("*").eq("tenant_id", tenantId).order("number");
+    const list = (data as any[]) ?? [];
+    setTables(list);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const entries = await Promise.all(list.map(async (t) => {
+      const url = `${origin}/m/${t.qr_token}`;
+      const dataUrl = await QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: "#3a2118", light: "#ffffff" } });
+      return [t.id, dataUrl] as const;
+    }));
+    setQrs(Object.fromEntries(entries));
+  }
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tenantId]);
+
+  async function bulkCreate() {
+    if (count < 1 || count > 100) return alert("Escolha entre 1 e 100 mesas.");
+    setBusy(true);
+    const startNum = (tables[tables.length - 1]?.number ?? 0) + 1;
+    const rows = Array.from({ length: count }, (_, i) => ({
+      tenant_id: tenantId,
+      number: startNum + i,
+      capacity: 4,
+      qr_token: crypto.randomUUID(),
+      status: "livre" as const,
+    }));
+    const { error } = await supabase.from("restaurant_tables").insert(rows);
+    if (error) alert(error.message);
+    await load();
+    setBusy(false);
+  }
+
+  async function deleteTable(id: string) {
+    if (!confirm("Excluir mesa? Sessões em andamento serão fechadas.")) return;
+    await supabase.from("restaurant_tables").delete().eq("id", id);
+    await load();
+  }
+
+  function printAll() {
+    const html = `
+      <html><head><title>QR Codes — Mesas</title>
+      <style>
+        body{font-family:sans-serif;margin:0;padding:24px;background:#fff}
+        .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+        .card{border:1px solid #ddd;border-radius:16px;padding:20px;text-align:center;page-break-inside:avoid}
+        .num{font-size:28px;font-weight:800;color:#3a2118;margin-bottom:8px}
+        img{width:100%;max-width:280px;height:auto}
+        .hint{margin-top:10px;color:#777;font-size:12px}
+      </style></head><body>
+      <div class="grid">
+        ${tables.map(t => `
+          <div class="card">
+            <div class="num">Mesa ${t.number}</div>
+            <img src="${qrs[t.id] ?? ""}" />
+            <div class="hint">Aponte a câmera do celular</div>
+          </div>`).join("")}
+      </div>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+  }
+
+  return (
+    <div>
+      <div className="bg-white border border-line rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-end gap-3">
+        <div className="flex-1">
+          <div className="text-sm font-semibold text-ink mb-1">Criar mesas em lote</div>
+          <p className="text-xs text-ink-muted">Cada mesa recebe um QR Code único. Você pode criar mais a qualquer momento.</p>
+        </div>
+        <div className="flex items-end gap-2">
+          <div>
+            <span className="text-xs text-ink-muted">Quantidade</span>
+            <input type="number" min={1} max={100} value={count}
+              onChange={e => setCount(Number(e.target.value))}
+              className="block w-28 mt-1 px-3 py-2 border border-line rounded-lg" />
+          </div>
+          <button onClick={bulkCreate} disabled={busy}
+            className="flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-dark disabled:opacity-60">
+            <Plus className="w-4 h-4" /> Gerar
+          </button>
+          {tables.length > 0 && (
+            <button onClick={printAll}
+              className="flex items-center gap-2 bg-ink text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-ink/90">
+              <Printer className="w-4 h-4" /> Imprimir
+            </button>
+          )}
+        </div>
+      </div>
+
+      {tables.length === 0 ? (
+        <div className="bg-white border border-line rounded-2xl p-10 text-center text-ink-muted text-sm">
+          Nenhuma mesa cadastrada ainda.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {tables.map(t => (
+            <div key={t.id} className="bg-white border border-line rounded-2xl p-4 text-center">
+              <div className="font-bold text-ink mb-2">Mesa {t.number}</div>
+              {qrs[t.id] ? (
+                <img src={qrs[t.id]} alt={`QR Mesa ${t.number}`} className="w-full rounded-lg border border-line" />
+              ) : (
+                <div className="aspect-square bg-cream-dark rounded-lg animate-pulse" />
+              )}
+              <div className="flex items-center justify-between mt-2 gap-2">
+                <a href={`/m/${t.qr_token}`} target="_blank" rel="noreferrer"
+                  className="text-[11px] text-brand hover:underline truncate">Abrir link</a>
+                <button onClick={() => deleteTable(t.id)} className="text-ink-muted hover:text-rose-600">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
