@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import QRCode from "qrcode";
 import {
   LayoutGrid, ListOrdered, Table as TableIcon, ChefHat, Wallet,
   UtensilsCrossed, Layers, MapPin, Bot, Zap, MessageSquare,
   BarChart3, Users, Store, QrCode, ShieldCheck, Plug, CreditCard,
-  LogOut, Loader2, Plus, Bell, Search, CheckCircle2,
+  LogOut, Loader2, Plus, Bell, Search, CheckCircle2, Trash2, Printer, Pencil, X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/staff")({
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/staff")({
 type Tenant = { id: string; name: string; slug: string };
 type RestaurantTable = { id: string; number: number; status: string; capacity: number };
 type Order = { id: string; status: string; total: number; created_at: string; table_id: string | null };
-type OrderItem = { id: string; status: string; created_at: string; order_id: string; quantity: number; name_snapshot: string | null };
+type OrderItem = { id: string; status: string; created_at: string; order_id: string; quantity: number; product_name: string | null };
 
 type NavKey =
   | "overview" | "orders" | "tables" | "kds" | "cashier"
@@ -274,7 +275,7 @@ function StaffPage() {
             {active === "tables" && <TablesSection tenantId={tenant.id} />}
             {active === "kds" && <KDSSection tenantId={tenant.id} />}
             {active === "cashier" && <Placeholder title="Caixa" desc="Abertura/fechamento de caixa, sangrias e relatórios." />}
-            {active === "products" && <Placeholder title="Produtos" desc="Cadastre seus pratos, bebidas e combos." />}
+            {active === "products" && <ProductsSection tenantId={tenant.id} />}
             {active === "modifiers" && <Placeholder title="Adicionais e variações" desc="Configure complementos, tamanhos e opções." />}
             {active === "delivery_areas" && <Placeholder title="Áreas de entrega" desc="Defina bairros, raios e taxas de entrega." />}
             {active === "ai_agent" && <Placeholder title="Agente de IA" desc="Atendimento automático no WhatsApp." />}
@@ -283,7 +284,7 @@ function StaffPage() {
             {active === "reports_sales" && <Placeholder title="Vendas e fechamento" desc="Relatórios financeiros por período." />}
             {active === "reports_clients" && <Placeholder title="Clientes" desc="CRM e histórico de pedidos." />}
             {active === "settings_store" && <Placeholder title="Dados da loja" desc="Nome, logo, horário e contato." />}
-            {active === "settings_qr" && <Placeholder title="QR Codes das mesas" desc="Gere e imprima os QR Codes." />}
+            {active === "settings_qr" && <QRSection tenantId={tenant.id} />}
             {active === "settings_users" && <Placeholder title="Usuários e permissões" desc="Gestor, garçom, cozinha e caixa." />}
             {active === "settings_integrations" && <Placeholder title="Integrações" desc="Pagamentos, impressoras e webhooks." />}
             {active === "settings_plan" && <Placeholder title="Plano e assinatura" desc="Faturas, plano atual e upgrades." />}
@@ -486,7 +487,7 @@ function KDSSection({ tenantId }: { tenantId: string }) {
   async function load() {
     const { data } = await supabase
       .from("order_items")
-      .select("id, status, created_at, order_id, quantity, name_snapshot, orders!inner(tenant_id)")
+      .select("id, status, created_at, order_id, quantity, product_name, orders!inner(tenant_id)")
       .eq("orders.tenant_id", tenantId)
       .in("status", ["recebido", "em_preparo"])
       .order("created_at");
@@ -526,7 +527,7 @@ function KDSSection({ tenantId }: { tenantId: string }) {
             {items.filter(o => o.status === col.key).map(it => (
               <div key={it.id} className="border border-line rounded-xl p-3 bg-cream/40">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">{it.quantity}× {it.name_snapshot ?? "Item"}</span>
+                  <span className="font-semibold text-sm">{it.quantity}× {it.product_name ?? "Item"}</span>
                   <span className="text-xs text-ink-muted">
                     {new Date(it.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   </span>
