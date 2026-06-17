@@ -202,7 +202,7 @@ function DashboardTab({ tenantId }: { tenantId: string }) {
         <Card icon={DollarSign} label="Vendas (período)" value={`R$ ${totalDay.toFixed(2)}`} color="bg-green-100 text-green-700" />
         <Card icon={ShoppingCart} label="Pedidos" value={String(orders.length)} color="bg-blue-100 text-blue-700" />
         <Card icon={Users} label="Ticket médio" value={`R$ ${avgTicket.toFixed(2)}`} color="bg-purple-100 text-purple-700" />
-        <Card icon={Clock} label="Em preparo" value={String(orders.filter(o => o.status === "em_preparo").length)} color="bg-amber-100 text-amber-700" />
+        <Card icon={Clock} label="Abertos" value={String(orders.filter(o => o.status === "aberto" || o.status === "enviado").length)} color="bg-amber-100 text-amber-700" />
       </div>
 
       <div className="bg-white rounded-xl border">
