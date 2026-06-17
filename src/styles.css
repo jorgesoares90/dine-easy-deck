@@ -59,6 +59,24 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Food-themed semantic tokens (staff backoffice) */
+  --color-app: var(--app);
+  --color-cream: var(--cream);
+  --color-cream-dark: var(--cream-dark);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-sage: var(--sage);
+  --color-sage-dark: var(--sage-dark);
+  --color-sage-soft: var(--sage-soft);
+  --color-mustard: var(--mustard);
+  --color-mustard-dark: var(--mustard-dark);
+  --color-mustard-soft: var(--mustard-soft);
 }
 
 :root {
@@ -95,6 +113,24 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Food palette — warm terracotta + cream + sage */
+  --app: oklch(0.985 0.012 75);          /* warm off-white */
+  --cream: oklch(0.965 0.022 78);        /* sidebar cream */
+  --cream-dark: oklch(0.93 0.028 78);    /* hover */
+  --line: oklch(0.9 0.018 75);           /* warm border */
+  --ink: oklch(0.24 0.025 45);           /* deep cocoa */
+  --ink-soft: oklch(0.38 0.022 45);
+  --ink-muted: oklch(0.56 0.02 50);
+  --brand: oklch(0.62 0.17 35);          /* terracotta */
+  --brand-dark: oklch(0.54 0.18 32);
+  --brand-soft: oklch(0.93 0.045 38);
+  --sage: oklch(0.62 0.085 145);         /* basil sage */
+  --sage-dark: oklch(0.42 0.08 145);
+  --sage-soft: oklch(0.93 0.045 145);
+  --mustard: oklch(0.78 0.14 82);        /* mustard */
+  --mustard-dark: oklch(0.52 0.13 75);
+  --mustard-soft: oklch(0.95 0.06 85);
 }
 
 .dark {
