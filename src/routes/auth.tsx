@@ -7,7 +7,7 @@ import { ChefHat, Mail, Lock, User, Loader2 } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Login Staff — Comanda Fácil" },
+      { title: "Login Staff — Garçom de Bolso" },
       { name: "description", content: "Acesso para gestor, garçom, cozinha e caixa." },
     ],
   }),
@@ -70,7 +70,7 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-slate-700 hover:text-orange-600">
           <ChefHat className="w-7 h-7 text-orange-600" />
-          <span className="font-bold text-xl">Comanda Fácil</span>
+          <span className="font-bold text-xl">Garçom de Bolso</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8">

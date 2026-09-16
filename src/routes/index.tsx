@@ -10,7 +10,7 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Comanda Fácil — SaaS para Restaurantes" },
+      { title: "Garçom de Bolso — SaaS para Restaurantes" },
       { name: "description", content: "Sistema multi-tenant para lanchonetes com pagamento parcial e captura de leads." },
     ],
   }),
@@ -139,7 +139,7 @@ function LeadScreen({ name, phone, setName, setPhone, onSubmit }: any) {
         <QrCode className="w-10 h-10 text-orange-600" />
       </div>
       <h1 className="text-2xl font-bold text-slate-900">Bem-vindo!</h1>
-      <p className="text-sm text-slate-500 mt-1">Mesa 04 • Comanda Fácil</p>
+      <p className="text-sm text-slate-500 mt-1">Mesa 04 • Garçom de Bolso</p>
       <p className="text-slate-600 mt-4 text-sm">Para começar, conte pra gente quem é você 👋</p>
       <div className="w-full mt-6 space-y-3 text-left">
         <div>
@@ -520,7 +520,7 @@ function GestorView() {
     <div className="flex max-w-7xl mx-auto px-4 gap-4 pb-12">
       <aside className="hidden md:block w-60 bg-white rounded-2xl border border-slate-200 p-3 h-fit sticky top-24">
         <div className="px-3 py-3 mb-2 border-b border-slate-100">
-          <p className="font-bold text-slate-900">Comanda Fácil</p>
+          <p className="font-bold text-slate-900">Garçom de Bolso</p>
           <p className="text-xs text-slate-500">Lanchonete do Zé</p>
         </div>
         <nav className="space-y-1">
